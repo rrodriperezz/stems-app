@@ -1,0 +1,3 @@
+# Etapa 1 (AMT): audio -> MIDI. Subproyecto AISLADO del app principal
+# (basic-pitch trae sus propias deps; no mezclar con .venv / .venv-gpu).
+basic-pitch[onnx]

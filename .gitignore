@@ -1,0 +1,22 @@
+# Entornos Python (no reproducibles por git)
+.venv/
+.venv-gpu/
+tabs/.venv-tabs/
+__pycache__/
+*.pyc
+
+# Documentacion (no va al repo publico)
+*.md
+
+# Paquete portable / instalador (gigas)
+dist/
+
+# Audio y datos de runtime — NUNCA al repo publico:
+# canciones de entrada y stems separados suelen tener derechos de autor.
+data/
+input/
+output/
+tabs/output/
+
+# Modelos (el .ckpt pesa 667 MB; audio-separator lo descarga solo)
+models/

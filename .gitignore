@@ -5,8 +5,9 @@ tabs/.venv-tabs/
 __pycache__/
 *.pyc
 
-# Documentation (kept out of the public repo)
+# Working notes stay out of the public repo; the README is the exception
 *.md
+!README.md
 
 # Portable package / installer (gigabytes)
 dist/

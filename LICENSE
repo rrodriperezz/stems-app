@@ -22,5 +22,5 @@ SOFTWARE.
 
 ---
 
-Nota: static/vendor/soundtouch.js es SoundTouchJS, con licencia LGPL-2.1
-(ver el encabezado del propio archivo). Se distribuye sin modificaciones.
+Note: static/vendor/soundtouch.js is SoundTouchJS, licensed under LGPL-2.1
+(see the file's own header). It is distributed unmodified.

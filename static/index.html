@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -12,7 +12,7 @@
 <body>
 <header>
   <div class="brand">
-    <svg class="emblem" viewBox="0 0 100 100" role="img" aria-label="Púa">
+    <svg class="emblem" viewBox="0 0 100 100" role="img" aria-label="Guitar pick">
       <defs>
         <linearGradient id="pick" x1="0" y1="0" x2="0" y2="1">
           <stop offset="0" stop-color="#ffe1b0"/>
@@ -47,12 +47,12 @@
 
 <section class="card" id="dropzone">
   <div class="rivets" aria-hidden="true"></div>
-  <!-- <p class="drop-title">Tirá los tracks acá <span>— o hacé click</span></p> -->
+  <!-- <p class="drop-title">Drop your tracks here <span>— or click</span></p> -->
   <p class="drop-sub">.mp3 · .wav · .mp4 · .m4a — 300MB</p>
   <input type="file" id="file-input" accept=".mp3,.wav,.mp4,.m4a,.flac,.ogg" multiple hidden>
   <div class="model-row" onclick="event.stopPropagation()">
     <div class="opt">
-      <label>Modelo</label>
+      <label>Model</label>
       <select id="model-select">
         <option value="bs_roformer_sw" selected>BS-Roformer-SW — 6 stems</option>
         <option value="htdemucs_ft">htdemucs_ft — 4 stems</option>
@@ -60,34 +60,34 @@
       </select>
     </div>
     <div class="opt">
-      <label>Nitidez</label>
+      <label>Quality</label>
       <select id="quality-select">
-        <option value="rapido">Rápida</option>
+        <option value="rapido">Fast</option>
         <option value="normal" selected>Normal</option>
-        <option value="alta">Alta</option>
+        <option value="alta">High</option>
       </select>
     </div>
   </div>
   <div class="url-row" onclick="event.stopPropagation()">
     <input type="url" id="url-input" placeholder="URL" autocomplete="off">
-    <button type="button" id="url-btn">Procesar</button>
+    <button type="button" id="url-btn">Process</button>
   </div>
   <p id="upload-msg"></p>
 </section>
 
 <section id="processing-list"></section>
 
-<h2>Canciones procesadas</h2>
+<h2>Processed songs</h2>
 <div class="lib-bar">
-  <input id="lib-search" type="search" placeholder="Buscar canción…" autocomplete="off">
-  <select id="lib-sort" title="Ordenar">
-    <option value="recent" selected>Recientes</option>
-    <option value="name">Nombre A-Z</option>
-    <option value="duration">Duración</option>
+  <input id="lib-search" type="search" placeholder="Search songs…" autocomplete="off">
+  <select id="lib-sort" title="Sort">
+    <option value="recent" selected>Recent</option>
+    <option value="name">Name A-Z</option>
+    <option value="duration">Duration</option>
   </select>
 </div>
-<section id="songs-list"><p class="empty">Cargando…</p></section>
-<p id="lib-empty" class="empty" hidden>Sin resultados.</p>
+<section id="songs-list"><p class="empty">Loading…</p></section>
+<p id="lib-empty" class="empty" hidden>No results.</p>
 
 <script type="module" src="/static/app.js?v=9"></script>
 </body>

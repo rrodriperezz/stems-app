@@ -1,15 +1,15 @@
 /* ============================================================
-   STEMS — "Amp Rack" theme, ejecucion 2025.
-   Mantiene el concepto metalero (oscuro + ember + display
-   condensada) pero moderno: glass, hairline, sombras suaves,
-   aire, micro-interacciones spring. Solo CSS, no toca app.js.
+   STEMS — "Amp Rack" theme, 2025 edition.
+   Keeps the metal concept (dark + ember + condensed display
+   type) but modern: glass, hairlines, soft shadows,
+   breathing room, spring micro-interactions. CSS only, app.js untouched.
    ============================================================ */
 
 :root {
   --bg:        #0a0a0c;
   --bg-2:      #0d0d10;
 
-  /* superficies translucidas -> elevacion por luz, no por bisel */
+  /* translucent surfaces -> elevation through light, not bevels */
   --s1: rgba(255,255,255,.026);
   --s2: rgba(255,255,255,.05);
   --s3: rgba(255,255,255,.08);
@@ -66,7 +66,7 @@ body {
   padding: 36px 20px 110px;
 }
 
-/* grano sutil */
+/* subtle grain */
 body::before {
   content: "";
   position: fixed; inset: 0; z-index: -1; pointer-events: none;
@@ -160,7 +160,7 @@ h2::after {
 }
 .card:hover { transform: translateY(-3px); border-color: var(--border-2); box-shadow: var(--sh-2); }
 .card.dragover { border-color: var(--ember); box-shadow: var(--glow); transform: translateY(-3px) scale(1.005); }
-/* halo ember que respira al arrastrar */
+/* ember halo that breathes while dragging */
 .card.dragover::after {
   content: ""; position: absolute; inset: 0; pointer-events: none;
   background: radial-gradient(420px 220px at 50% 0%, rgba(255,90,44,.18), transparent 70%);
@@ -198,7 +198,7 @@ select:hover { border-color: var(--ember); }
 select:focus { outline: none; border-color: var(--ember); box-shadow: var(--glow); }
 select option { background: #15151a; }
 
-/* ayuda + tooltip glass */
+/* help + glass tooltip */
 .help {
   display: inline-flex; align-items: center; justify-content: center;
   width: 18px; height: 18px; border-radius: 50%; flex-shrink: 0;
@@ -263,7 +263,7 @@ select option { background: #15151a; }
   box-shadow: 0 0 16px -2px var(--ember);
   transition: width .8s var(--ease);
 }
-/* destello que recorre la barra */
+/* shine that sweeps across the bar */
 .progress-fill::after {
   content: ""; position: absolute; inset: 0;
   background: linear-gradient(90deg, transparent, rgba(255,255,255,.45), transparent);
@@ -273,7 +273,7 @@ select option { background: #15151a; }
 @keyframes sheen { to { transform: translateX(100%); } }
 @keyframes rise { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
 
-/* ---------------- biblioteca ---------------- */
+/* ---------------- library ---------------- */
 #songs-list .song { animation: rise .34s var(--spring) both; }
 .song {
   position: relative;
@@ -492,7 +492,7 @@ input[type=range]::-moz-range-thumb {
 .loading { font-family: var(--f-mono); color: var(--ash); font-size: .82rem; padding: 16px 0; }
 .empty { font-family: var(--f-ui); color: var(--ash); font-size: .92rem; letter-spacing: .02em; }
 
-/* color por stem (la guitarra = ember, la estrella) */
+/* color per stem (guitar = ember, the star) */
 .stem-vocals .stem-name { color: #ff7063; }
 .stem-drums  .stem-name { color: #ffb43e; }
 .stem-bass   .stem-name { color: #6fb6e0; }
@@ -522,10 +522,10 @@ input[type=range]::-moz-range-thumb {
 }
 
 /* =====================================================
-   PASE 2 — mas glass, mas profundidad, mas vida (2025)
+   PASS 2 — more glass, more depth, more life (2025)
    ===================================================== */
 
-/* fondo aurora: blobs cálido/frío que derivan lento detras de todo */
+/* aurora background: warm/cool blobs drifting slowly behind everything */
 body::after {
   content: ""; position: fixed; inset: -28%; z-index: -2; pointer-events: none;
   background:
@@ -541,7 +541,7 @@ body::after {
   100% { transform: translate3d(-2.5%, 2.5%, 0) scale(1.05); }
 }
 
-/* header sticky frosteado: el fondo aparece al hacer scroll (scroll-driven) */
+/* frosted sticky header: the background appears on scroll (scroll-driven) */
 header {
   position: sticky; top: 0; z-index: 40;
   margin: -12px -20px 26px; padding: 16px 20px;
@@ -557,7 +557,7 @@ header {
   to   { background: rgba(10,10,12,.62); border-bottom-color: var(--border); }
 }
 
-/* canto iluminado (lit edge) en superficies glass — borde con gradiente via mask */
+/* lit edge on glass surfaces — gradient border via mask */
 .card, .song, .job { isolation: isolate; }
 .card::before, .song::before, .job::after {
   content: ""; position: absolute; inset: 0; border-radius: inherit; padding: 1px;
@@ -567,18 +567,18 @@ header {
   pointer-events: none; z-index: 2;
 }
 
-/* h1: barrido de metal calentado (shimmer lento) */
+/* h1: heated-metal sweep (slow shimmer) */
 h1 { background-size: 220% auto; animation: molten 7s var(--ease) infinite; }
 @keyframes molten {
   0%, 100% { background-position: 0% 50%; }
   50%      { background-position: 100% 50%; }
 }
 
-/* sombras tintadas en ember al hover (calor) */
+/* ember-tinted shadows on hover (heat) */
 .card:hover { box-shadow: var(--sh-2), 0 20px 56px -26px rgba(255,90,44,.4); }
 .song:hover { box-shadow: var(--sh-2), 0 20px 56px -28px rgba(255,90,44,.38); }
 
-/* skeleton shimmer mientras cargan los stems */
+/* skeleton shimmer while the stems load */
 .loading {
   background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,.06) 45%, transparent 90%);
   background-size: 220% 100%; border-radius: var(--r);
@@ -586,7 +586,7 @@ h1 { background-size: 220% auto; animation: molten 7s var(--ease) infinite; }
 }
 @keyframes skel { to { background-position: -220% 0; } }
 
-/* foco mas suave y moderno */
+/* softer, more modern focus ring */
 :focus-visible { outline: none; box-shadow: 0 0 0 2px var(--bg), 0 0 0 4px rgba(255,90,44,.7); }
 
 @media (max-width: 560px) {
@@ -594,10 +594,10 @@ h1 { background-size: 220% auto; animation: molten 7s var(--ease) infinite; }
 }
 
 /* =====================================================
-   PASE 3 — el naranja, acentuado y repartido por la pagina
+   PASS 3 — orange, emphasized and spread across the page
    ===================================================== */
 
-/* aurora: el blob de arriba-izq mucho mas caliente + acompanantes calidos */
+/* aurora: much warmer top-left blob + warm companions */
 body::after {
   background:
     radial-gradient(36% 42% at 15% 13%, rgba(255,90,44,.42), transparent 66%),
@@ -605,7 +605,7 @@ body::after {
     radial-gradient(30% 34% at 66% 88%, rgba(255,110,40,.18), transparent 72%);
 }
 
-/* halo calido que respira detras del logo/titulo (la zona que te gusto) */
+/* warm halo breathing behind the logo/title */
 .brand { position: relative; }
 .brand::before {
   content: ""; position: absolute; z-index: -1; pointer-events: none;
@@ -616,13 +616,13 @@ body::after {
 }
 @keyframes brand-breathe { from { opacity: .7; transform: scale(.97); } to { opacity: 1; transform: scale(1.04); } }
 
-/* headings y acentos con resplandor ember */
+/* headings and accents with an ember glow */
 h2 { text-shadow: 0 0 26px rgba(255,90,44,.32); }
 .drop-title span { text-shadow: 0 0 22px rgba(255,90,44,.6); }
 .tagline { text-shadow: 0 0 18px rgba(255,90,44,.25); }
-.badge { } /* sin tocar el verde */
+.badge { } /* leave the green alone */
 
-/* dropzone: bloom ember permanente arriba-izq, se intensifica al arrastrar */
+/* dropzone: permanent top-left ember bloom, stronger while dragging */
 .card::after {
   content: ""; position: absolute; inset: 0; pointer-events: none; border-radius: inherit;
   z-index: 0; transition: background .3s var(--ease);
@@ -633,7 +633,7 @@ h2 { text-shadow: 0 0 26px rgba(255,90,44,.32); }
 }
 .card > *:not(.rivets) { position: relative; z-index: 1; }
 
-/* spotlight ember al pasar el mouse por una cancion de la biblioteca */
+/* ember spotlight when hovering a song in the library */
 .song-head, .player { position: relative; z-index: 1; }
 .song::after {
   content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none;
@@ -642,7 +642,7 @@ h2 { text-shadow: 0 0 26px rgba(255,90,44,.32); }
 }
 .song:hover::after { opacity: 1; }
 
-/* halo pulsante ember detras del boton play */
+/* pulsing ember halo behind the play button */
 .play-btn { position: relative; }
 .play-btn::after {
   content: ""; position: absolute; inset: -7px; border-radius: 50%; z-index: -1;
@@ -655,7 +655,7 @@ h2 { text-shadow: 0 0 26px rgba(255,90,44,.32); }
   50%      { transform: scale(1.2);  opacity: .8; }
 }
 
-/* glow ember en el toggle del player tambien */
+/* ember glow on the player toggle too */
 #btn-toggle { position: relative; }
 #btn-toggle::after {
   content: ""; position: absolute; inset: -5px; border-radius: var(--pill); z-index: -1;
@@ -663,7 +663,7 @@ h2 { text-shadow: 0 0 26px rgba(255,90,44,.32); }
   filter: blur(6px); opacity: .7;
 }
 
-/* glows ember fijos enmarcando la pagina (esquinas) */
+/* fixed ember glows framing the page (corners) */
 html {
   background:
     radial-gradient(560px 320px at 8% 4%, rgba(255,90,44,.16), transparent 60%),
@@ -674,10 +674,10 @@ html {
 }
 
 /* =====================================================
-   PASE 4 — waveform, pitch, biblioteca, cancelar
+   PASS 4 — waveform, pitch, library, cancel
    ===================================================== */
 
-/* seek con forma de onda */
+/* waveform seek bar */
 .seek { height: 48px; }
 .seek::before { display: none; }
 .wave {
@@ -694,7 +694,7 @@ html {
   background: linear-gradient(90deg, rgba(255,90,44,.24), rgba(255,180,62,.22));
   box-shadow: none;
 }
-/* playhead: linea vertical brillante */
+/* playhead: bright vertical line */
 .seek-fill::after {
   content: ""; right: -1px; top: 0; transform: none;
   width: 2px; height: 100%; border-radius: 1px;
@@ -703,7 +703,7 @@ html {
 }
 .seek:hover .seek-fill::after { box-shadow: 0 0 14px 2px rgba(255,90,44,.95); }
 
-/* barra de biblioteca: buscar + ordenar */
+/* library bar: search + sort */
 .lib-bar { display: flex; gap: 10px; margin: -2px 0 16px; }
 #lib-search {
   flex: 1; font-family: var(--f-ui); font-size: .85rem; color: var(--bone);
@@ -714,7 +714,7 @@ html {
 #lib-search::placeholder { color: var(--ash); }
 #lib-search:focus { outline: none; border-color: var(--ember); box-shadow: 0 0 18px -6px var(--ember); }
 
-/* boton cancelar job en cola */
+/* cancel button for queued jobs */
 .job-cancel {
   position: absolute; top: 14px; right: 16px;
   width: 28px; height: 28px; border-radius: 50%; cursor: pointer;
@@ -725,11 +725,11 @@ html {
 .job-cancel:hover { color: #ff9a9a; border-color: var(--blood); background: rgba(224,70,70,.16); }
 .job-cancel:active { transform: scale(.92); }
 
-/* icono de atajos de teclado */
+/* keyboard shortcuts icon */
 #kbd-help { font-family: var(--f-body); font-style: normal; }
 
 /* =====================================================
-   PASE 5 — procesar desde link de YouTube  
+   PASS 5 — process from a YouTube link  
    ===================================================== */
 .url-row {
   display: flex; gap: 8px; margin: 18px auto 0; max-width: 540px;

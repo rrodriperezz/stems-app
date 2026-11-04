@@ -1,17 +1,17 @@
-r"""Pipeline v2: separacion 6 stems con BS-Roformer-SW (vocals/drums/bass/guitar/piano/other).
+r"""Pipeline v2: 6-stem separation with BS-Roformer-SW (vocals/drums/bass/guitar/piano/other).
 
-Reemplaza a htdemucs/htdemucs_ft como modelo de produccion porque diferencia
-bass y guitar como stems propios (SDR publicado: bass 14.6, guitar 9.0) en vez
-de mandar la guitarra a "other".
+Replaces htdemucs/htdemucs_ft as the production model because it splits
+bass and guitar into their own stems (published SDR: bass 14.6, guitar 9.0) instead
+of sending the guitar to "other".
 
-Por cada archivo de entrada (.mp4/.mp3/.wav/...):
-  1. Valida con ffprobe (tiene audio? duracion?).
-  2. Extrae/convierte a WAV 44.1 kHz estereo con ffmpeg.
-  3. Separa 6 stems con audio-separator + BS-Roformer-SW (GPU ROCm).
-  4. Renombra stems a nombres limpios (vocals.wav, guitar.wav, ...).
-  5. Mide tiempos y agrega el resultado a output/resultados.json.
+For each input file (.mp4/.mp3/.wav/...):
+  1. Validates it with ffprobe (does it have audio? how long?).
+  2. Extracts/converts to 44.1 kHz stereo WAV with ffmpeg.
+  3. Separates 6 stems with audio-separator + BS-Roformer-SW (ROCm GPU).
+  4. Renames stems to clean names (vocals.wav, guitar.wav, ...).
+  5. Measures times and appends the result to output/resultados.json.
 
-Usar SOLO con .venv-gpu (audio-separator + torch ROCm):
+Use ONLY with .venv-gpu (audio-separator + torch ROCm):
   .venv-gpu\Scripts\python.exe scripts\separate_v2.py input\cancion.mp3
   .venv-gpu\Scripts\python.exe scripts\separate_v2.py input\video.mp4 --overlap 4
 """
@@ -31,7 +31,7 @@ RESULTS_JSON = OUTPUT / "resultados.json"
 MODEL_FILE = "BS-Roformer-SW.ckpt"
 MODEL_TAG = "bs-roformer-sw"
 
-# patron de salida de audio-separator: <input>_(Stem)_<modelo>.wav
+# audio-separator output pattern: <input>_(Stem)_<model>.wav
 STEM_RE = re.compile(r"_\((\w+)\)_")
 
 
@@ -43,11 +43,11 @@ def probe(path: Path) -> dict:
     ]
     proc = subprocess.run(cmd, capture_output=True, text=True)
     if proc.returncode != 0:
-        raise RuntimeError(f"ffprobe fallo: {proc.stderr.strip()[:300]}")
+        raise RuntimeError(f"ffprobe failed: {proc.stderr.strip()[:300]}")
     info = json.loads(proc.stdout)
     audio = [s for s in info.get("streams", []) if s.get("codec_type") == "audio"]
     if not audio:
-        raise RuntimeError("el archivo no tiene pista de audio")
+        raise RuntimeError("the file has no audio track")
     return {
         "duration_sec": round(float(info["format"]["duration"]), 1),
         "audio_codec": audio[0].get("codec_name"),
@@ -62,21 +62,21 @@ def extract_wav(src: Path, dst: Path) -> float:
            "-vn", "-acodec", "pcm_s16le", "-ar", "44100", "-ac", "2", str(dst)]
     proc = subprocess.run(cmd, capture_output=True, text=True)
     if proc.returncode != 0:
-        raise RuntimeError(f"ffmpeg fallo: {proc.stderr.strip()[:300]}")
+        raise RuntimeError(f"ffmpeg failed: {proc.stderr.strip()[:300]}")
     return round(time.perf_counter() - t0, 1)
 
 
 def separate(wav: Path, out_dir: Path, overlap: int) -> tuple[float, list[Path]]:
-    """Separa con audio-separator (API). Devuelve (segundos, stems renombrados)."""
+    """Separate with audio-separator (API). Returns (seconds, renamed stems)."""
     from audio_separator.separator import Separator
 
     import torch
     device = "cuda" if torch.cuda.is_available() else "cpu"
     if device == "cpu":
-        print("AVISO: GPU no disponible, corre en CPU (lento en este venv)")
+        print("WARNING: GPU not available, running on CPU (slow in this venv)")
 
     separator = Separator(
-        log_level=30,  # WARNING: sin spam de INFO
+        log_level=30,  # WARNING: no INFO spam
         model_file_dir=str(MODELS_DIR),
         output_dir=str(out_dir),
         output_format="WAV",
@@ -94,7 +94,7 @@ def separate(wav: Path, out_dir: Path, overlap: int) -> tuple[float, list[Path]]
     produced = separator.separate(str(wav))
     elapsed = round(time.perf_counter() - t0, 1)
 
-    # renombrar "<input>_(Guitar)_BS-Roformer-SW.wav" -> "guitar.wav"
+    # rename "<input>_(Guitar)_BS-Roformer-SW.wav" -> "guitar.wav"
     renamed = []
     for name in produced:
         f = out_dir / Path(name).name
@@ -114,15 +114,15 @@ def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("input", type=Path)
     ap.add_argument("--overlap", type=int, default=8,
-                    help="num_overlap de inferencia (mas = mejor calidad, mas lento; default 8)")
+                    help="inference num_overlap (higher = better quality, slower; default 8)")
     args = ap.parse_args()
 
     src = args.input.resolve()
     if not src.exists():
-        sys.exit(f"No existe: {src}")
+        sys.exit(f"Not found: {src}")
     if not (MODELS_DIR / MODEL_FILE).exists():
-        sys.exit(f"Falta el modelo {MODEL_FILE} en {MODELS_DIR} "
-                 "(audio-separator lo descarga solo la primera vez si hay internet)")
+        sys.exit(f"Model {MODEL_FILE} is missing from {MODELS_DIR} "
+                 "(audio-separator downloads it on first run if there is internet access)")
 
     result = {
         "file": src.name,
@@ -133,7 +133,7 @@ def main() -> None:
     try:
         print(f"[1/3] ffprobe {src.name}")
         result.update(probe(src))
-        print(f"      duracion {result['duration_sec']} s, "
+        print(f"      duration {result['duration_sec']} s, "
               f"audio {result['audio_codec']} {result['sample_rate']} Hz {result['channels']}ch")
 
         run_dir = OUTPUT / src.stem
@@ -160,10 +160,10 @@ def main() -> None:
         result["ratio_proceso_vs_duracion"] = round(
             result["t_separate_sec"] / result["duration_sec"], 2)
         result["status"] = "ok"
-        print(f"\nOK - {result['t_separate_sec']} s de separacion para "
-              f"{result['duration_sec']} s de audio "
-              f"(x{result['ratio_proceso_vs_duracion']} de la duracion)")
-        print(f"Stems en: {stems_dir}")
+        print(f"\nOK - {result['t_separate_sec']} s of separation for "
+              f"{result['duration_sec']} s of audio "
+              f"(x{result['ratio_proceso_vs_duracion']} of the duration)")
+        print(f"Stems in: {stems_dir}")
     except Exception as e:
         result["status"] = "error"
         result["error"] = str(e)
@@ -173,7 +173,7 @@ def main() -> None:
     history = json.loads(RESULTS_JSON.read_text(encoding="utf-8")) if RESULTS_JSON.exists() else []
     history.append(result)
     RESULTS_JSON.write_text(json.dumps(history, indent=2, ensure_ascii=False), encoding="utf-8")
-    print(f"Resultado registrado en {RESULTS_JSON}")
+    print(f"Result saved to {RESULTS_JSON}")
     if result["status"] == "error":
         sys.exit(1)
 

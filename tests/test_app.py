@@ -1,10 +1,10 @@
-"""Tests de app.py. Correr con el venv GPU (importa torch):
+"""Tests for app.py. Run with the GPU venv (it imports torch):
 
     .venv-gpu\\Scripts\\python.exe -m pytest tests -q
 
-Cubren la logica pura (slugify, calibracion de ratio) y los endpoints nuevos
-(descarga zip) + el guard anti path-traversal compartido por zip y borrado.
-No tocan el pipeline de separacion (no encolan jobs reales).
+They cover the pure logic (slugify, ratio calibration) and the new endpoints
+(zip download) + the path-traversal guard shared by zip and delete.
+They do not touch the separation pipeline (no real jobs are queued).
 """
 import io
 import json
@@ -18,11 +18,11 @@ from fastapi.testclient import TestClient
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 import app  # noqa: E402
 
-# base_url local: el middleware only_local rechaza hosts que no sean 127.0.0.1/localhost
+# local base_url: the only_local middleware rejects hosts other than 127.0.0.1/localhost
 client = TestClient(app.app, base_url="http://127.0.0.1")
 
 
-# ---------- logica pura ----------
+# ---------- pure logic ----------
 
 def test_slugify_basico():
     assert app.slugify("Hello World!") == "hello-world"
@@ -42,11 +42,11 @@ def test_ratios_by_model_mediana_y_filtros():
     done = [
         {"model": "htdemucs", "duration": 100, "time_sec": 20},  # 0.2
         {"model": "htdemucs", "duration": 100, "time_sec": 40},  # 0.4
-        {"model": "htdemucs", "duration": 100, "time_sec": 30},  # 0.3 -> mediana
+        {"model": "htdemucs", "duration": 100, "time_sec": 30},  # 0.3 -> median
         {"model": "bs_roformer_sw", "duration": 10, "time_sec": 5},  # 0.5
-        {"model": "x", "duration": 0, "time_sec": 5},      # descartado (dur=0)
-        {"model": None, "duration": 10, "time_sec": 5},    # descartado (sin modelo)
-        {"model": "y", "duration": 10, "time_sec": None},  # descartado (sin tiempo)
+        {"model": "x", "duration": 0, "time_sec": 5},      # discarded (dur=0)
+        {"model": None, "duration": 10, "time_sec": 5},    # discarded (no model)
+        {"model": "y", "duration": 10, "time_sec": None},  # discarded (no time)
     ]
     r = app.ratios_by_model(done)
     assert r["htdemucs"] == pytest.approx(0.3)
@@ -58,7 +58,7 @@ def test_ratios_by_model_vacio():
     assert app.ratios_by_model([]) == {}
 
 
-# ---------- fixture de cancion falsa ----------
+# ---------- fake song fixture ----------
 
 @pytest.fixture
 def fake_song():
@@ -116,24 +116,24 @@ def test_delete_borra_de_verdad(fake_song):
 
 
 def test_middleware_rechaza_host_ajeno():
-    # DNS rebinding: Host que no es local -> 400 antes de tocar cualquier endpoint
+    # DNS rebinding: a non-local Host -> 400 before reaching any endpoint
     r = client.get("/api/songs", headers={"host": "evil.example"})
     assert r.status_code == 400
 
 
 def test_middleware_rechaza_origin_cruzado_en_post():
-    # CSRF: POST con Origin de otro sitio -> 403 (aunque el sid ni exista)
-    r = client.post("/api/jobs/lo-que-sea/cancel", headers={"origin": "http://evil.example"})
+    # CSRF: POST with a foreign Origin -> 403 (even if the sid does not exist)
+    r = client.post("/api/jobs/whatever/cancel", headers={"origin": "http://evil.example"})
     assert r.status_code == 403
 
 
 def test_middleware_acepta_origin_local():
     r = client.post("/api/jobs/no-existe-xyz/cancel", headers={"origin": "http://127.0.0.1:8765"})
-    assert r.status_code == 404   # pasa el middleware y cae en el 404 real del endpoint
+    assert r.status_code == 404   # passes the middleware and hits the endpoint's real 404
 
 
 def test_upload_rechaza_calidad_invalida():
-    # quality desconocida -> 422 antes de encolar (no dispara separacion real)
+    # unknown quality -> 422 before queuing (no real separation)
     files = {"file": ("x.mp3", b"fake", "audio/mpeg")}
     r = client.post("/api/upload", files=files, data={"quality": "ultraturbo"})
     assert r.status_code == 422

@@ -1,6 +1,6 @@
-"""Importa stems WAV ya procesados (experimento Dia 1) a la biblioteca de la web.
+"""Import already-processed WAV stems (Day 1 experiment) into the web library.
 
-Uso: python import_existing.py <stems_dir> <id> <nombre> <modelo> <duracion_s> <tiempo_proc_s> <device>
+Usage: python import_existing.py <stems_dir> <id> <name> <model> <duration_s> <processing_time_s> <device>
 """
 import json
 import subprocess
@@ -21,7 +21,7 @@ def main() -> None:
     for stem in STEMS:
         wav = src / f"{stem}.wav"
         if not wav.exists():
-            sys.exit(f"falta {wav}")
+            sys.exit(f"missing {wav}")
         subprocess.run(["ffmpeg", "-y", "-v", "error", "-i", str(wav),
                         "-codec:a", "libmp3lame", "-b:a", "320k",
                         str(out / f"{stem}.mp3")], check=True)

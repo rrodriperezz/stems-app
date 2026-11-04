@@ -1,5 +1,5 @@
-; Instalador de Stems — paquete portable completo (Python embebido + torch CUDA + modelo + canciones)
-; Compilar: ISCC.exe stems-setup.iss  (salida en dist\installer\)
+; Stems installer — full portable package (embedded Python + CUDA torch + model + songs)
+; Build: ISCC.exe stems-setup.iss  (output in dist\installer\)
 
 #define PackDir "C:\Users\Usuario\Desktop\stems-app-investigacion\dist\stems-pack"
 
@@ -10,24 +10,24 @@ AppVersion=1.0
 AppPublisher=Stems
 DefaultDirName={localappdata}\Stems
 DisableProgramGroupPage=yes
-; Per-user: sin UAC y la app puede escribir data\ dentro de su carpeta
+; Per-user: no UAC prompt, and the app can write data\ inside its own folder
 PrivilegesRequired=lowest
 OutputDir=C:\Users\Usuario\Desktop\stems-app-investigacion\dist\installer
 OutputBaseFilename=stems-setup
 SetupIconFile={#PackDir}\assets\stems.ico
 Compression=lzma2
 SolidCompression=yes
-; Contenido ~6.3 GB: partir en slices de ~2 GB (setup.exe + .bin van juntos)
+; ~6.3 GB of content: split into ~2 GB slices (setup.exe + .bin files go together)
 DiskSpanning=yes
 ArchitecturesInstallIn64BitMode=x64compatible
 WizardStyle=modern
 
 [Languages]
-Name: "spanish"; MessagesFile: "compiler:Languages\Spanish.isl"
+Name: "english"; MessagesFile: "compiler:Default.isl"
 
 [Files]
-; Excludes: el arbol de licencias de torch tiene rutas >260 chars que abortan la compilacion
-; (no aporta nada al runtime). Tambien saco caches de bytecode.
+; Excludes: torch's license tree has paths >260 chars that abort the build
+; (it adds nothing at runtime). Bytecode caches are excluded too.
 Source: "{#PackDir}\*"; DestDir: "{app}"; Excludes: "torch-*.dist-info\licenses\third_party\*,*.pyc,__pycache__\*"; Flags: recursesubdirs createallsubdirs ignoreversion
 
 [Icons]
@@ -35,4 +35,4 @@ Name: "{autodesktop}\Stems"; Filename: "{app}\Stems.bat"; WorkingDir: "{app}"; I
 Name: "{autoprograms}\Stems"; Filename: "{app}\Stems.bat"; WorkingDir: "{app}"; IconFilename: "{app}\assets\stems.ico"
 
 [Run]
-Filename: "{app}\Stems.bat"; Description: "Abrir Stems ahora"; Flags: postinstall nowait skipifsilent
+Filename: "{app}\Stems.bat"; Description: "Launch Stems now"; Flags: postinstall nowait skipifsilent

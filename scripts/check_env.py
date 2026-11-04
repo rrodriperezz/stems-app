@@ -1,4 +1,4 @@
-"""Verifica el entorno: Python, torch, GPU, demucs, ffmpeg. Solo reporta, no modifica nada."""
+"""Check the environment: Python, torch, GPU, demucs, ffmpeg. Read-only, changes nothing."""
 import platform
 import shutil
 import subprocess
@@ -15,30 +15,30 @@ def main() -> None:
             out = subprocess.run([tool, "-version"], capture_output=True, text=True).stdout.splitlines()[0]
             print(f"{tool:<12}: OK — {out}")
         else:
-            print(f"{tool:<12}: NO ENCONTRADO")
+            print(f"{tool:<12}: NOT FOUND")
 
     try:
         import torch
         print(f"torch       : {torch.__version__}")
         cuda = torch.cuda.is_available()
-        print(f"GPU (cuda/rocm disponible): {cuda}")
+        print(f"GPU (cuda/rocm available): {cuda}")
         if cuda:
             print(f"  device 0  : {torch.cuda.get_device_name(0)}")
-            # Smoke test real: una matmul en GPU. Detecta backends que "aparecen" pero crashean.
+            # Real smoke test: a matmul on the GPU. Catches backends that "show up" but crash.
             try:
                 a = torch.rand(512, 512, device="cuda")
                 (a @ a).sum().item()
-                print("  smoke test: OK (matmul en GPU funciona)")
+                print("  smoke test: OK (GPU matmul works)")
             except Exception as e:
-                print(f"  smoke test: FALLO — {e}")
+                print(f"  smoke test: FAILED — {e}")
     except ImportError as e:
-        print(f"torch       : NO INSTALADO — {e}")
+        print(f"torch       : NOT INSTALLED — {e}")
 
     try:
         import demucs
         print(f"demucs      : {demucs.__version__}")
     except ImportError as e:
-        print(f"demucs      : NO INSTALADO — {e}")
+        print(f"demucs      : NOT INSTALLED — {e}")
 
 
 if __name__ == "__main__":

@@ -1,36 +1,36 @@
-"""audio (stem de guitarra) -> notas MIDI. Etapa 1 (AMT) del pipeline a tablatura.
+"""audio (guitar stem) -> MIDI notes. Stage 1 (AMT) of the tablature pipeline.
 
-Usa basic-pitch (Spotify, MIT). Saca .mid + notes.csv (start, end, pitch, nombre, velocity).
-NO da cuerda/traste todavia (eso es Etapa 2). Monofonico (solos) sale bien;
-acordes/distorsion salen rough -> tratar la salida como BORRADOR para corregir por oido.
+Uses basic-pitch (Spotify, MIT). Outputs .mid + notes.csv (start, end, pitch, name, velocity).
+Does NOT assign string/fret yet (that is Stage 2). Monophonic parts (solos) come out well;
+chords/distortion come out rough -> treat the output as a DRAFT to fix by ear.
 
-Uso (desde la carpeta tabs/):
-  .venv-tabs\\Scripts\\python.exe to_midi.py <audio.wav|mp3> [opciones]
+Usage (from the tabs/ folder):
+  .venv-tabs\\Scripts\\python.exe to_midi.py <audio.wav|mp3> [options]
 
-Opciones (con defaults pensados para guitarra):
-  --out-dir DIR        carpeta de salida (default: tabs/output)
-  --min-note-ms 70     nota mas corta a detectar (ms). Bajar p/ solos rapidos.
-  --min-freq 70        frecuencia minima Hz (~mi grave = 82, drop D = 73)
-  --max-freq 1600      frecuencia maxima Hz (trastes agudos)
-  --onset 0.5          umbral de ataque (0-1). Subir = menos notas fantasma.
-  --frame 0.3          umbral de sostenido (0-1).
+Options (defaults tuned for guitar):
+  --out-dir DIR        output folder (default: tabs/output)
+  --min-note-ms 70     shortest note to detect (ms). Lower it for fast solos.
+  --min-freq 70        minimum frequency Hz (~low E = 82, drop D = 73)
+  --max-freq 1600      maximum frequency Hz (high frets)
+  --onset 0.5          onset threshold (0-1). Higher = fewer ghost notes.
+  --frame 0.3          sustain threshold (0-1).
 
-Simplificacion (post-proceso, para que sea tocable en guitarra):
-  --min-velocity 0     descarta notas con velocity < N (1-127). Mata bleed de otros
-                       instrumentos y notas fantasma debiles. Probar 25-45.
-  --mono               colapsa a monofonico: en cada instante queda solo la nota mas
-                       fuerte (la melodia/lead), descarta acordes y armonias simultaneas.
-                       Ideal para solos: baja drasticamente la densidad de notas.
-  --min-gap-ms 0       espaciado minimo entre ataques (ms): si dos notas arrancan mas
-                       cerca que esto, queda la mas fuerte. Limita notas/seg (mata
-                       retriggers y runs irreales). Probar 100-180 si sigue muy denso.
+Simplification (post-processing, so it is playable on guitar):
+  --min-velocity 0     drops notes with velocity < N (1-127). Removes bleed from other
+                       instruments and weak ghost notes. Try 25-45.
+  --mono               collapses to monophonic: at each instant only the loudest note
+                       remains (the melody/lead); chords and simultaneous harmonies are dropped.
+                       Ideal for solos: drastically lowers note density.
+  --min-gap-ms 0       minimum spacing between onsets (ms): if two notes start closer
+                       than this, the louder one wins. Caps notes per second (removes
+                       retriggers and unrealistic runs). Try 100-180 if it is still too dense.
 """
 import argparse
 import csv
 from pathlib import Path
 
 NOTE_NAMES = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"]
-MONO_OVERLAP_TOL = 0.03  # s: solape menor a esto no cuenta como choque (runs legato)
+MONO_OVERLAP_TOL = 0.03  # s: overlaps shorter than this do not count as a clash (legato runs)
 
 
 def midi_to_name(pitch: int) -> str:
@@ -47,10 +47,10 @@ def filter_min_velocity(notes, min_vel):
 
 
 def thin_by_gap(notes, gap_s):
-    """Impone un espaciado minimo entre ataques: gana la nota mas fuerte.
+    """Enforce a minimum spacing between onsets: the louder note wins.
 
-    Recorre por tiempo de inicio; si una nota arranca a menos de gap_s de la ultima
-    aceptada, se queda la de mayor amplitud. Cap efectivo de notas por segundo.
+    Walks notes by start time; if a note starts less than gap_s after the last
+    accepted one, the one with higher amplitude is kept. Effectively caps notes per second.
     """
     out = []
     for n in sorted(notes, key=lambda x: float(x[0])):
@@ -63,11 +63,11 @@ def thin_by_gap(notes, gap_s):
 
 
 def reduce_mono(notes):
-    """Deja una linea monofonica: voraz por amplitud, gana la nota mas fuerte.
+    """Keep a single monophonic line: greedy by amplitude, the louder note wins.
 
-    Recorre de mas fuerte a mas debil y acepta una nota solo si no se solapa
-    (con tolerancia) con ninguna ya aceptada. Resultado: nunca suenan dos a la vez;
-    las notas debiles tapadas por una lead (armonias/bleed) se caen.
+    Walks from loudest to quietest and accepts a note only if it does not overlap
+    (within tolerance) any note already accepted. Result: two notes never sound at once;
+    weak notes masked by a lead (harmonies/bleed) are dropped.
     """
     kept = []
     for n in sorted(notes, key=lambda x: float(x[3]), reverse=True):
@@ -81,7 +81,7 @@ def reduce_mono(notes):
 
 
 def notes_to_midi(notes, path: Path):
-    """Reconstruye el .mid desde la lista filtrada (programa = guitarra acustica)."""
+    """Rebuild the .mid from the filtered list (program = acoustic guitar)."""
     import pretty_midi
 
     pm = pretty_midi.PrettyMIDI()
@@ -95,8 +95,8 @@ def notes_to_midi(notes, path: Path):
 
 
 def main() -> None:
-    ap = argparse.ArgumentParser(description="Transcribe audio a MIDI (basic-pitch).")
-    ap.add_argument("audio", help="archivo de audio (idealmente un stem de guitarra)")
+    ap = argparse.ArgumentParser(description="Transcribe audio to MIDI (basic-pitch).")
+    ap.add_argument("audio", help="audio file (ideally a guitar stem)")
     ap.add_argument("--out-dir", default=None)
     ap.add_argument("--min-note-ms", type=float, default=70.0)
     ap.add_argument("--min-freq", type=float, default=70.0)
@@ -104,22 +104,22 @@ def main() -> None:
     ap.add_argument("--onset", type=float, default=0.5)
     ap.add_argument("--frame", type=float, default=0.3)
     ap.add_argument("--min-velocity", type=int, default=0,
-                    help="descarta notas con velocity < N (1-127); mata bleed/fantasmas")
+                    help="drop notes with velocity < N (1-127); removes bleed/ghost notes")
     ap.add_argument("--mono", action="store_true",
-                    help="colapsa a monofonico (solo la nota mas fuerte por instante)")
+                    help="collapse to monophonic (only the loudest note at each instant)")
     ap.add_argument("--min-gap-ms", type=float, default=0.0,
-                    help="espaciado minimo entre ataques (ms); gana la mas fuerte")
+                    help="minimum spacing between onsets (ms); the louder note wins")
     args = ap.parse_args()
 
     audio = Path(args.audio)
     if not audio.exists():
-        raise SystemExit(f"no existe: {audio}")
+        raise SystemExit(f"not found: {audio}")
     out_dir = Path(args.out_dir) if args.out_dir else Path(__file__).resolve().parent / "output"
     out_dir.mkdir(parents=True, exist_ok=True)
 
     from basic_pitch.inference import predict
 
-    print(f"[transcribiendo] {audio.name} (puede tardar la primera vez: carga el modelo)")
+    print(f"[transcribing] {audio.name} (the first run can be slow: it loads the model)")
     _, midi_data, notes = predict(
         str(audio),
         onset_threshold=args.onset,
@@ -130,7 +130,7 @@ def main() -> None:
         melodia_trick=True,
     )
 
-    # Post-proceso de simplificacion (opcional). Si no se pide nada, queda igual que antes.
+    # Optional simplification post-processing. If nothing is requested, output is unchanged.
     raw_count = len(notes)
     simplified = args.min_velocity > 0 or args.mono or args.min_gap_ms > 0
     if args.min_velocity > 0:
@@ -140,15 +140,15 @@ def main() -> None:
     if args.min_gap_ms > 0:
         notes = thin_by_gap(notes, args.min_gap_ms / 1000.0)
 
-    # Los stems separados se llaman todos "guitar.mp3" -> usar el nombre de la carpeta
-    # de la cancion como prefijo para no pisar salidas entre canciones.
+    # Separated stems are all named "guitar.mp3" -> prefix with the song folder name
+    # so outputs from different songs do not overwrite each other.
     STEM_NAMES = {"guitar", "vocals", "drums", "bass", "piano", "other"}
     name = f"{audio.parent.name}_{audio.stem}" if audio.stem.lower() in STEM_NAMES else audio.stem
     mid_path = out_dir / f"{name}.mid"
     csv_path = out_dir / f"{name}.notes.csv"
 
-    # Si filtramos, hay que reconstruir el .mid desde la lista filtrada (el midi_data
-    # de basic-pitch es el crudo). Sin filtro, escribimos el crudo tal cual (sin regresion).
+    # When filtering, the .mid must be rebuilt from the filtered list (basic-pitch's
+    # midi_data is the raw one). Without filters, the raw output is written as is (no regression).
     if simplified:
         notes_to_midi(notes, mid_path)
     else:
@@ -163,13 +163,13 @@ def main() -> None:
                         midi_to_name(int(n[2])), velocity(n)])
 
     if simplified:
-        print(f"[ok] {len(notes_sorted)} notas (de {raw_count} crudas, "
-              f"-{raw_count - len(notes_sorted)} simplificadas)")
+        print(f"[ok] {len(notes_sorted)} notes (from {raw_count} raw, "
+              f"-{raw_count - len(notes_sorted)} simplified)")
     else:
-        print(f"[ok] {len(notes_sorted)} notas detectadas")
+        print(f"[ok] {len(notes_sorted)} notes detected")
     print(f"  MIDI: {mid_path}")
     print(f"  CSV:  {csv_path}")
-    print("  (abri el .mid en TuxGuitar/Guitar Pro/DAW; el CSV es la lista cruda de notas)")
+    print("  (open the .mid in TuxGuitar/Guitar Pro/a DAW; the CSV is the raw note list)")
 
 
 if __name__ == "__main__":

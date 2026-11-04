@@ -1,9 +1,9 @@
-r"""Analisis de energia por stem: cuanta energia del mix cae en cada stem.
+r"""Per-stem energy analysis: how much of the mix energy lands in each stem.
 
-Reporta RMS dBFS por stem y % de energia total, mas energia en banda de bajo
-(40-250 Hz) para diagnosticar si el bass realmente esta en el stem bass.
+Reports RMS dBFS per stem and % of total energy, plus energy in the bass band
+(40-250 Hz) to check whether the bass really ends up in the bass stem.
 
-Uso:
+Usage:
   .venv\Scripts\python.exe scripts\analyze_stems.py output\Walls\cuda-api\htdemucs_ft
 """
 import argparse
@@ -15,7 +15,7 @@ import soundfile as sf
 
 
 def band_energy(x: np.ndarray, sr: int, lo: float, hi: float) -> float:
-    """Energia en banda [lo, hi] Hz via FFT (mono-sum)."""
+    """Energy in the [lo, hi] Hz band via FFT (mono sum)."""
     mono = x.mean(axis=1)
     spec = np.abs(np.fft.rfft(mono)) ** 2
     freqs = np.fft.rfftfreq(len(mono), 1 / sr)
@@ -29,7 +29,7 @@ def main() -> None:
 
     files = sorted(args.stems_dir.glob("*.wav"))
     if not files:
-        sys.exit(f"Sin WAVs en {args.stems_dir}")
+        sys.exit(f"No WAVs in {args.stems_dir}")
 
     rows = []
     total_energy = 0.0
@@ -46,7 +46,7 @@ def main() -> None:
         rows.append((f.stem, dbfs, energy, low, mid))
 
     print(f"\n{args.stems_dir}")
-    print(f"{'stem':<45} {'RMS dBFS':>9} {'% energia':>10} {'% low 40-250Hz':>15}")
+    print(f"{'stem':<45} {'RMS dBFS':>9} {'% energy':>10} {'% low 40-250Hz':>15}")
     for name, dbfs, energy, low, mid in rows:
         pct = 100 * energy / total_energy if total_energy else 0
         pct_low = 100 * low / total_low if total_low else 0

@@ -1,14 +1,14 @@
-// Stems Web — player multipista con Web Audio (sync sample-perfect entre stems).
-// Velocidad con time-stretch + pitch shift (SoundTouchJS): tempo y tono independientes.
+// Stems Web — multitrack player with Web Audio (sample-perfect sync between stems).
+// Speed via time-stretch + pitch shift (SoundTouchJS): tempo and pitch are independent.
 import { PitchShifter } from "/static/vendor/soundtouch.js";
 
-const STRETCH_BUFFER = 4096;   // tamano del ScriptProcessor de SoundTouch (potencia de 2)
-const WAVE_BARS = 600;         // resolucion de la forma de onda
+const STRETCH_BUFFER = 4096;   // SoundTouch ScriptProcessor size (power of 2)
+const WAVE_BARS = 600;         // waveform resolution
 const $ = (sel, el = document) => el.querySelector(sel);
 const stemList = song => song.stems || ["vocals", "drums", "bass", "other"];
 const clampPitch = n => Math.max(-7, Math.min(7, n));
 
-// ---------- upload (uno o varios) ----------
+// ---------- upload (one or many) ----------
 const dropzone = $("#dropzone");
 const fileInput = $("#file-input");
 const uploadMsg = $("#upload-msg");
@@ -26,7 +26,7 @@ fileInput.addEventListener("change", () => {
   fileInput.value = "";
 });
 
-// ---------- procesar desde link de YouTube ----------
+// ---------- process from a YouTube link ----------
 const urlInput = $("#url-input");
 const urlBtn = $("#url-btn");
 
@@ -34,7 +34,7 @@ async function processUrl() {
   const url = (urlInput.value || "").trim();
   if (!url) return;
   urlBtn.disabled = true;
-  uploadMsg.textContent = "Resolviendo link…";
+  uploadMsg.textContent = "Resolving link…";
   const fd = new FormData();
   fd.append("url", url);
   fd.append("model", $("#model-select").value);
@@ -43,7 +43,7 @@ async function processUrl() {
     const res = await fetch("/api/upload-url", { method: "POST", body: fd });
     if (!res.ok) throw new Error((await res.json().catch(() => ({}))).detail || res.statusText);
     urlInput.value = "";
-    uploadMsg.textContent = "En cola — descargando de YouTube";
+    uploadMsg.textContent = "Queued — downloading from YouTube";
     setTimeout(() => (uploadMsg.textContent = ""), 4000);
     refresh();
   } catch (e) {
@@ -76,20 +76,20 @@ async function uploadMany(files) {
   let ok = 0;
   for (let i = 0; i < files.length; i++) {
     const tag = files.length > 1 ? `(${i + 1}/${files.length}) ` : "";
-    uploadMsg.textContent = `Subiendo ${tag}${files[i].name}…`;
+    uploadMsg.textContent = `Uploading ${tag}${files[i].name}…`;
     try { await uploadOne(files[i]); ok++; }
-    catch (e) { uploadMsg.textContent = `Error con ${files[i].name}: ${e.message}`; }
+    catch (e) { uploadMsg.textContent = `Error with ${files[i].name}: ${e.message}`; }
   }
   if (ok) {
-    uploadMsg.textContent = files.length > 1 ? `${ok}/${files.length} en cola` : "En cola";
+    uploadMsg.textContent = files.length > 1 ? `${ok}/${files.length} queued` : "Queued";
     setTimeout(() => (uploadMsg.textContent = ""), 4000);
     refresh();
   }
 }
 
-// ---------- lista / polling ----------
+// ---------- list / polling ----------
 let lastDoneIds = "";
-let songMeta = {};               // id -> meta (para ordenar/filtrar)
+let songMeta = {};               // id -> meta (for sorting/filtering)
 
 async function refresh() {
   let data;
@@ -104,22 +104,22 @@ async function refresh() {
   for (const j of data.processing) {
     const div = document.createElement("div");
     div.className = "job" + (j.status === "error" ? " error" : "");
-    let phase = j.status === "error" ? ("Error: " + j.error) : (j.phase || "en cola");
-    if (j.status === "processing" && j.eta_sec) phase += ` · ~${fmtTime(j.eta_sec)} restante`;
+    let phase = j.status === "error" ? ("Error: " + j.error) : (j.phase || "queued");
+    if (j.status === "processing" && j.eta_sec) phase += ` · ~${fmtTime(j.eta_sec)} left`;
     div.innerHTML = `
       <div class="jname">${esc(j.name || j.id)}</div>
       <div class="jphase">${esc(phase)}</div>
       ${j.status === "processing" ? `<div class="progress-track"><div class="progress-fill" style="width:${j.progress || 3}%"></div></div>` : ""}`;
     if (j.status === "queued") {
       const x = document.createElement("button");
-      x.className = "job-cancel"; x.textContent = "✕"; x.title = "Cancelar (sacar de la cola)";
+      x.className = "job-cancel"; x.textContent = "✕"; x.title = "Cancel (remove from queue)";
       x.onclick = () => cancelJob(j.id);
       div.appendChild(x);
     }
     proc.appendChild(div);
   }
 
-  // re-render de la biblioteca solo si cambio el set (no pisar el player abierto)
+  // re-render the library only if the set changed (do not clobber the open player)
   const ids = JSON.stringify(data.done.map(s => s.id));
   if (ids !== lastDoneIds) {
     lastDoneIds = ids;
@@ -132,7 +132,7 @@ async function cancelJob(sid) {
     const res = await fetch(`/api/jobs/${sid}/cancel`, { method: "POST" });
     if (!res.ok) throw new Error((await res.json().catch(() => ({}))).detail || res.statusText);
     refresh();
-  } catch (e) { alert("No se pudo cancelar: " + e.message); }
+  } catch (e) { alert("Could not cancel: " + e.message); }
 }
 
 function renderSongs(songs) {
@@ -148,11 +148,11 @@ function renderSongs(songs) {
     const badgeCls = mdl === "bs_roformer_sw" ? "sw" : mdl.includes("_ft") ? "ft" : "";
     div.innerHTML = `
       <div class="song-head">
-        <button class="play-btn" title="Abrir player">▶</button>
+        <button class="play-btn" title="Open player">▶</button>
         <span class="song-title">${esc(s.name)}</span>
         <span class="model-badge ${badgeCls}">${esc(s.model)}</span>
         <span class="song-meta">${fmtTime(s.duration)} · proc. ${esc(s.time_sec)}s</span>
-        <button class="del-btn" title="Borrar">🗑</button>
+        <button class="del-btn" title="Delete">🗑</button>
       </div>
       <div class="player" hidden></div>`;
     $(".song-head", div).addEventListener("click", () => togglePlayer(div, s));
@@ -162,7 +162,7 @@ function renderSongs(songs) {
   applyLibrary();
 }
 
-// filtro (buscar) + orden — opera sobre el DOM existente (no destruye players abiertos)
+// filter (search) + sort — works on the existing DOM (does not destroy open players)
 function applyLibrary() {
   const list = $("#songs-list");
   const q = ($("#lib-search").value || "").trim().toLowerCase();
@@ -182,12 +182,12 @@ function applyLibrary() {
     name:     (a, b) => (songMeta[a.dataset.id]?.name || "").localeCompare(songMeta[b.dataset.id]?.name || ""),
     duration: (a, b) => (songMeta[b.dataset.id]?.duration || 0) - (songMeta[a.dataset.id]?.duration || 0),
   }[sort] || (() => 0);
-  nodes.sort(key).forEach(n => list.appendChild(n));   // reordena sin recrear
+  nodes.sort(key).forEach(n => list.appendChild(n));   // reorder without recreating
 
   const empty = $("#lib-empty");
   empty.hidden = !(nodes.length && visible === 0);
-  empty.textContent = q ? "Sin resultados para esa búsqueda." : "Sin resultados.";
-  if (!nodes.length) list.innerHTML = '<p class="empty">Nada todavía. Tirá un archivo arriba.</p>';
+  empty.textContent = q ? "No results for that search." : "No results.";
+  if (!nodes.length) list.innerHTML = '<p class="empty">Nothing yet. Drop a file above.</p>';
 }
 
 $("#lib-search").addEventListener("input", applyLibrary);
@@ -202,14 +202,14 @@ async function deleteSong(songDiv, song) {
     songDiv.remove();
     delete songMeta[song.id];
     try { localStorage.removeItem(stateKey(song.id)); } catch {}
-    lastDoneIds = "";   // forzar re-render en el proximo refresh
+    lastDoneIds = "";   // force a re-render on the next refresh
     applyLibrary();
   } catch (e) {
-    alert("No se pudo borrar: " + e.message);
+    alert("Could not delete: " + e.message);
   }
 }
 
-// ---------- persistencia de estado por cancion (localStorage) ----------
+// ---------- per-song state persistence (localStorage) ----------
 const stateKey = sid => "stems:st:" + sid;
 function loadState(sid) {
   try { return JSON.parse(localStorage.getItem(stateKey(sid))) || {}; } catch { return {}; }
@@ -224,9 +224,9 @@ function saveState() {
   P.lastSave = performance.now();
 }
 
-// ---------- player multipista ----------
-let ctx = null;                 // AudioContext compartido
-let P = null;                   // estado del player activo
+// ---------- multitrack player ----------
+let ctx = null;                 // shared AudioContext
+let P = null;                   // active player state
 
 function newPlayerState(song, panel) {
   const vol = {}, muted = {};
@@ -239,7 +239,7 @@ function newPlayerState(song, panel) {
   };
 }
 
-// aplica el estado guardado (volumenes/mute/solo/loop/rate/pitch) sobre P
+// apply the saved state (volumes/mute/solo/loop/rate/pitch) to P
 function applySavedState(saved) {
   if (saved.vol) for (const k in P.vol) if (typeof saved.vol[k] === "number") P.vol[k] = saved.vol[k];
   if (saved.muted) for (const k in P.muted) P.muted[k] = !!saved.muted[k];
@@ -251,7 +251,7 @@ function applySavedState(saved) {
   if (typeof saved.loopB === "number") P.loopB = saved.loopB;
 }
 
-// Posicion actual en segundos, ajustada por la velocidad de reproduccion.
+// Current position in seconds, adjusted for playback speed.
 function currentPos() {
   if (!P) return 0;
   return P.playing ? P.offset + (ctx.currentTime - P.startedAt) * P.rate : P.offset;
@@ -259,31 +259,31 @@ function currentPos() {
 
 async function togglePlayer(songDiv, song) {
   const panel = $(".player", songDiv);
-  if (!panel.hidden) {           // cerrar
+  if (!panel.hidden) {           // close
     saveState();
     stopPlayback();
     panel.hidden = true;
     P = null;
     return;
   }
-  // cerrar cualquier otro player abierto
+  // close any other open player
   if (P) saveState();
   stopPlayback();
   document.querySelectorAll(".player").forEach(p => (p.hidden = true));
   P = newPlayerState(song, panel);
   panel.hidden = false;
-  panel.innerHTML = '<p class="loading">Cargando stems…</p>';
+  panel.innerHTML = '<p class="loading">Loading stems…</p>';
 
   if (!ctx) ctx = new (window.AudioContext || window.webkitAudioContext)();
   try {
     const my = P;
     await Promise.all(stemList(song).map(async stem => {
       const res = await fetch(`/songs/${song.id}/${stem}.mp3`);
-      if (!res.ok) throw new Error(`${stem}.mp3 no encontrado`);
+      if (!res.ok) throw new Error(`${stem}.mp3 not found`);
       const buf = await ctx.decodeAudioData(await res.arrayBuffer());
       my.buffers[stem] = buf;
     }));
-    if (P !== my) return;        // el usuario abrio otra cancion mientras cargaba
+    if (P !== my) return;        // the user opened another song while this one was loading
     P.duration = Math.max(...stemList(song).map(s => P.buffers[s].duration));
 
     const saved = loadState(song.id);
@@ -292,9 +292,9 @@ async function togglePlayer(songDiv, song) {
     buildPlayerUI();
     const start = (typeof saved.offset === "number" && saved.offset < P.duration - 0.4)
       ? saved.offset : 0;
-    startPlayback(start);        // abrir = reproducir ya, desde donde quedo
+    startPlayback(start);        // opening = play right away, from where it left off
   } catch (e) {
-    panel.innerHTML = `<p class="loading">Error cargando stems: ${esc(e.message)}</p>`;
+    panel.innerHTML = `<p class="loading">Error loading stems: ${esc(e.message)}</p>`;
   }
 }
 
@@ -316,28 +316,28 @@ function buildPlayerUI() {
     <div class="controls-row">
       <div class="ctl">
         <span class="ctl-label">Loop A-B</span>
-        <button class="lbtn" id="loop-a" title="Marcar inicio (tecla A)">A</button>
-        <button class="lbtn" id="loop-b" title="Marcar fin (tecla B)">B</button>
-        <button class="lbtn" id="loop-clear" title="Quitar loop (tecla C)">✕</button>
+        <button class="lbtn" id="loop-a" title="Set start (key A)">A</button>
+        <button class="lbtn" id="loop-b" title="Set end (key B)">B</button>
+        <button class="lbtn" id="loop-clear" title="Clear loop (key C)">✕</button>
       </div>
-      <div class="ctl ctl-rate" title="Time-stretch: cambia la velocidad sin alterar el tono">
-        <span class="ctl-label">Velocidad</span>
+      <div class="ctl ctl-rate" title="Time-stretch: changes speed without changing pitch">
+        <span class="ctl-label">Speed</span>
         <input type="range" id="rate-slider" min="0.5" max="1.5" step="0.05" value="${P.rate}">
         <span class="rate-val" id="rate-val">${P.rate.toFixed(2)}×</span>
-        <button class="lbtn rate-reset" id="rate-reset" title="Volver a 1×">1×</button>
+        <button class="lbtn rate-reset" id="rate-reset" title="Reset to 1×">1×</button>
       </div>
-      <div class="ctl" title="Pitch shift: cambia el tono en semitonos sin alterar la velocidad">
-        <span class="ctl-label">Tono</span>
+      <div class="ctl" title="Pitch shift: changes pitch in semitones without changing speed">
+        <span class="ctl-label">Pitch</span>
         <select id="pitch-select">${pitchOpts.join("")}</select>
       </div>
-      <span class="help" id="kbd-help" tabindex="0" data-tip="Atajos de teclado (con el player abierto):
-• Espacio: play / pausa
-• ← →: retroceder / avanzar 5s  (Shift = 1s)
-• A / B: marcar inicio / fin del loop
-• C: quitar loop
-• 1-9: mute del stem N
-• + / −: subir / bajar el tono">⌨</span>
-      <a class="dl-zip" href="/api/songs/${sid}/download.zip" title="Descargar todos los stems (zip)">⬇ zip</a>
+      <span class="help" id="kbd-help" tabindex="0" data-tip="Keyboard shortcuts (with the player open):
+• Space: play / pause
+• ← →: back / forward 5s  (Shift = 1s)
+• A / B: set loop start / end
+• C: clear loop
+• 1-9: mute stem N
+• + / −: pitch up / down">⌨</span>
+      <a class="dl-zip" href="/api/songs/${sid}/download.zip" title="Download all stems (zip)">⬇ zip</a>
     </div>
     <div class="stem-row master-row">
       <span class="stem-name">Master</span>
@@ -351,7 +351,7 @@ function buildPlayerUI() {
         <button class="sbtn ${P.solo === stem ? "active-s" : ""}" data-s="${stem}" title="Solo">S</button>
         <input type="range" class="vol" data-v="${stem}" min="0" max="100" value="${Math.round(P.vol[stem] * 100)}">
         <span class="vol-val" id="vv-${stem}">${Math.round(P.vol[stem] * 100)}</span>
-        <a class="dl-stem" href="/songs/${sid}/${stem}.mp3" download="${sid}-${stem}.mp3" title="Descargar ${stem}">⬇</a>
+        <a class="dl-stem" href="/songs/${sid}/${stem}.mp3" download="${sid}-${stem}.mp3" title="Download ${stem}">⬇</a>
       </div>`).join("")}`;
 
   $("#btn-toggle", P.panel).onclick = () => (P.playing ? pausePlayback() : startPlayback(P.offset));
@@ -438,7 +438,7 @@ function applyMaster() {
   if (P && P.masterGain) P.masterGain.gain.value = P.masterVol;
 }
 
-// Cambia velocidad en vivo. Re-ancla offset/startedAt para que la posicion no salte.
+// Change speed live. Re-anchors offset/startedAt so the position does not jump.
 function setRate(rate) {
   if (!P) return;
   if (P.playing) { P.offset = currentPos(); P.startedAt = ctx.currentTime; }
@@ -449,7 +449,7 @@ function setRate(rate) {
   saveState();
 }
 
-// Cambia el tono (semitonos) sin tocar la velocidad.
+// Change pitch (semitones) without touching speed.
 function setPitch(semi) {
   if (!P) return;
   P.pitch = clampPitch(semi);
@@ -476,16 +476,16 @@ function updateLoopUI() {
 function startPlayback(offset) {
   if (!P || P.playing) return;
   if (ctx.state === "suspended") ctx.resume();
-  const master = ctx.createGain();          // bus general: stems -> master -> salida
+  const master = ctx.createGain();          // main bus: stems -> master -> output
   master.gain.value = P.masterVol;
   master.connect(ctx.destination);
   P.masterGain = master;
   P.sources = {};
   for (const stem of stemList(P.song)) {
-    // un PitchShifter por stem; arrancan juntos en el mismo quantum -> siguen sincronizados
+    // one PitchShifter per stem; they start in the same quantum -> they stay in sync
     const shifter = new PitchShifter(ctx, P.buffers[stem], STRETCH_BUFFER);
-    shifter.tempo = P.rate;                       // velocidad sin cambiar el tono
-    shifter.pitchSemitones = P.pitch;             // tono sin cambiar la velocidad
+    shifter.tempo = P.rate;                       // speed without changing pitch
+    shifter.pitchSemitones = P.pitch;             // pitch without changing speed
     if (P.duration) shifter.percentagePlayed = offset / P.duration;
     const g = ctx.createGain();
     g.gain.value = effectiveGain(stem);
@@ -536,18 +536,18 @@ function seekTo(t) {
 function tick() {
   if (!P || !P.playing) return;
   const pos = currentPos();
-  if (P.loopA != null && P.loopB != null) {   // loop A-B: rebota al inicio del rango
+  if (P.loopA != null && P.loopB != null) {   // A-B loop: jump back to the start of the range
     const lo = Math.min(P.loopA, P.loopB), hi = Math.max(P.loopA, P.loopB);
     if (pos >= hi) { seekTo(lo); return; }
   }
-  if (pos >= P.duration) {       // fin de la cancion
+  if (pos >= P.duration) {       // end of the song
     pausePlayback();
     P.offset = 0;
     updateTimeUI(0);
     return;
   }
   updateTimeUI(pos);
-  if (performance.now() - P.lastSave > 2500) saveState();   // guarda posicion cada ~2.5s
+  if (performance.now() - P.lastSave > 2500) saveState();   // save the position every ~2.5s
   P.raf = requestAnimationFrame(tick);
 }
 
@@ -568,13 +568,13 @@ function updateTimeUI(pos) {
   if (!P.seeking) setSeekVisual(pos);
 }
 
-// ---------- forma de onda ----------
+// ---------- waveform ----------
 function computePeaks(P) {
   const stems = stemList(P.song);
   const len = Math.max(...stems.map(s => P.buffers[s].length));
   const n = Math.min(WAVE_BARS, len);
   const block = Math.max(1, Math.floor(len / n));
-  const step = Math.max(1, block >> 7);          // submuestreo para que sea rapido
+  const step = Math.max(1, block >> 7);          // downsample so it stays fast
   const peaks = new Float32Array(n);
   for (const s of stems) {
     const b = P.buffers[s];
@@ -588,7 +588,7 @@ function computePeaks(P) {
         const v = Math.abs((ch0[j] + ch1[j]) * 0.5);
         if (v > mx) mx = v;
       }
-      if (mx > peaks[i]) peaks[i] = mx;           // el stem mas fuerte por bucket
+      if (mx > peaks[i]) peaks[i] = mx;           // the loudest stem per bucket
     }
   }
   let max = 0;
@@ -626,7 +626,7 @@ window.addEventListener("resize", () => {
   resizeRAF = requestAnimationFrame(() => { if (P) drawWave(P); });
 });
 
-// ---------- atajos de teclado ----------
+// ---------- keyboard shortcuts ----------
 document.addEventListener("keydown", e => {
   if (!P || !P.panel || P.panel.hidden) return;
   const tag = e.target && e.target.tagName;
